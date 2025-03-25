@@ -4,6 +4,7 @@ import jmcomic
 
 from typing import Optional
 from jmcomic.jm_entity import JmAlbumDetail
+from nonebot import logger
 from nonebot import get_driver, get_plugin_config
 from PIL import Image
 
@@ -51,7 +52,7 @@ def all_to_pdf(input_folder, pdf_path, pdf_name):
         with os.scandir(path + "/" + str(i)) as entries:
             for entry in entries:
                 if entry.is_dir():
-                    print("这一级不应该有自录")
+                    logger.info("这一级不应该有自录")
                 if entry.is_file():
                     image.append(path + "/" + str(i) + "/" + entry.name)
     if "jpg" in image[0]:
@@ -73,6 +74,6 @@ def all_to_pdf(input_folder, pdf_path, pdf_name):
 def get_comic_file_path(comic: JmAlbumDetail):
     comic_file_path = os.path.join(COMIC_PATH + '/' + comic.title + ".pdf")
     if not os.path.exists(comic_file_path):
-        print(f"开始转换: {comic.title}")
+        logger.info(f"开始转换: {comic.title}")
         all_to_pdf(COMIC_PATH + "/" + comic.title, COMIC_PATH, comic.title)
     return comic_file_path

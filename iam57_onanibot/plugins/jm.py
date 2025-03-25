@@ -30,7 +30,6 @@ async def _(bot: Bot,
             "2. 该漫画只对登录用户可见"
         )
     comic_file_path = get_comic_file_path(comic)
-    print(comic_file_path)
     await bot.call_api("upload_group_file",
                        group_id=event.group_id,
                        file=comic_file_path,
