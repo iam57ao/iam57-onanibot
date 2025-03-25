@@ -1,10 +1,11 @@
+from typing import Annotated
+
 from jmcomic import MissingAlbumPhotoException
 from nonebot import on_command
 from nonebot.adapters import Message
 from nonebot.adapters.onebot.v11.bot import Bot
 from nonebot.adapters.onebot.v11.event import GroupMessageEvent
 from nonebot.params import CommandArg
-from typing import Annotated
 
 from ..utils.jm import download_comic, get_comic_file_path
 

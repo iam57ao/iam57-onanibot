@@ -1,17 +1,34 @@
 import os
-
-import jmcomic
 import yaml
+import jmcomic
+
+from typing import Optional
+from jmcomic.jm_entity import JmAlbumDetail
+from nonebot import get_driver, get_plugin_config
 from PIL import Image
 
-from jmcomic.jm_entity import JmAlbumDetail
+from ..configs.jm_config import JMConfig
 
-CONFIG = "jm_config.yml"
-JM_CONFIG = jmcomic.JmOption.from_file(CONFIG)
+driver = get_driver()
+jm_plugin_config = get_plugin_config(JMConfig)
 
-with open(CONFIG, "r", encoding="utf8") as f:
-    CONFIG_DATA = yaml.load(f, Loader=yaml.FullLoader)
-    COMIC_PATH = CONFIG_DATA["dir_rule"]["base_dir"]
+CONFIG_PATH = jm_plugin_config.config_path
+JM_CONFIG = jmcomic.JmOption.from_file(CONFIG_PATH)
+COMIC_PATH: Optional[str] = None
+
+
+@driver.on_startup
+async def set_base_dir():
+    if jm_plugin_config.use_default_comic_dir:
+        with open(CONFIG_PATH, "r", encoding="utf8") as jm_config_file:
+            config_data = yaml.load(jm_config_file, Loader=yaml.FullLoader)
+        config_data["dir_rule"]["base_dir"] = os.path.abspath(os.path.join(os.getcwd(), "data/comics"))
+        with open(CONFIG_PATH, "w", encoding="utf8") as jm_config_file:
+            yaml.safe_dump(config_data, jm_config_file)
+    with open(CONFIG_PATH, "r", encoding="utf8") as jm_config_file:
+        CONFIG_DATA = yaml.load(jm_config_file, Loader=yaml.FullLoader)
+        global COMIC_PATH
+        COMIC_PATH = CONFIG_DATA["dir_rule"]["base_dir"]
 
 
 def download_comic(jm_id: str) -> JmAlbumDetail:
@@ -25,14 +42,11 @@ def all_to_pdf(input_folder, pdf_path, pdf_name):
     image = []
     sources = []
     output = None
-
     with os.scandir(path) as entries:
         for entry in entries:
             if entry.is_dir():
                 sub_dir.append(int(entry.name))
-    # 对数字进行排序
     sub_dir.sort()
-
     for i in sub_dir:
         with os.scandir(path + "/" + str(i)) as entries:
             for entry in entries:
@@ -40,18 +54,15 @@ def all_to_pdf(input_folder, pdf_path, pdf_name):
                     print("这一级不应该有自录")
                 if entry.is_file():
                     image.append(path + "/" + str(i) + "/" + entry.name)
-
     if "jpg" in image[0]:
         output = Image.open(image[0])
         image.pop(0)
-
     for file in image:
         if "jpg" in file:
             img_file = Image.open(file)
             if img_file.mode == "RGB":
                 img_file = img_file.convert("RGB")
             sources.append(img_file)
-
     pdf_file_path = pdf_path + "/" + pdf_name
     if not pdf_file_path.endswith(".pdf"):
         pdf_file_path = pdf_file_path + ".pdf"
