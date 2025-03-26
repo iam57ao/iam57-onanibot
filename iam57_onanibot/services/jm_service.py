@@ -1,11 +1,11 @@
 from pathlib import Path
 
-import yaml
-from PIL import Image
 from jmcomic import JmAlbumDetail, JmOption
 from nonebot import get_plugin_config, logger
+from PIL import Image
+import yaml
 
-from ..configs.jm_config import JMConfig
+from iam57_onanibot.configs.jm_config import JMConfig
 
 
 class JMServiceMeta(type):
@@ -33,18 +33,26 @@ class JMService(metaclass=JMServiceMeta):
         comic_file_path = self.jm_comic_path / f"{comic.title}.pdf"
         if not Path.exists(comic_file_path):
             self.jm_option.download_album(comic.album_id)
-            self.all_to_pdf(self.jm_comic_path / comic.title, self.jm_comic_path, comic.title)
+            self.all_to_pdf(
+                self.jm_comic_path / comic.title, self.jm_comic_path, comic.title
+            )
         return str(comic_file_path)
 
     def __set_comic_dir(self):
-        with open(self.jm_config.jm_option_file_path, "r", encoding="utf8") as jm_option_file:
+        with open(
+            self.jm_config.jm_option_file_path, encoding="utf8"
+        ) as jm_option_file:
             jm_option_data = yaml.safe_load(jm_option_file)
         jm_comic_path = jm_option_data["dir_rule"]["base_dir"]
         if self.jm_config.use_default_comic_dir:
             jm_comic_path = Path.cwd() / "data" / "comics"
             jm_option_data["dir_rule"]["base_dir"] = str(jm_comic_path)
-            with open(self.jm_config.jm_option_file_path, "w", encoding="utf8") as jm_option_file:
-                yaml.safe_dump(jm_option_data, jm_option_file, sort_keys=False, allow_unicode=True)
+            with open(
+                self.jm_config.jm_option_file_path, "w", encoding="utf8"
+            ) as jm_option_file:
+                yaml.safe_dump(
+                    jm_option_data, jm_option_file, sort_keys=False, allow_unicode=True
+                )
         self.jm_comic_path = jm_comic_path
 
     @staticmethod
@@ -74,7 +82,9 @@ class JMService(metaclass=JMServiceMeta):
                 continue
             for sub_entry in subdir_path.iterdir():
                 if sub_entry.is_dir():
-                    logger.warning(f"在目录 {subdir_path} 下发现了意外的子目录: {sub_entry.name}")
+                    logger.warning(
+                        f"在目录 {subdir_path} 下发现了意外的子目录: {sub_entry.name}"
+                    )
                 elif sub_entry.is_file() and sub_entry.suffix.lower() == ".jpg":
                     images.append(sub_entry)
         if not images:

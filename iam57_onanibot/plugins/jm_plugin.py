@@ -3,21 +3,21 @@ from typing import Annotated
 from jmcomic import MissingAlbumPhotoException
 from nonebot import on_command
 from nonebot.adapters import Message
-from nonebot.exception import AdapterException
 from nonebot.adapters.onebot.v11.bot import Bot
 from nonebot.adapters.onebot.v11.event import GroupMessageEvent
+from nonebot.exception import AdapterException
 from nonebot.params import CommandArg
 
-from ..services.jm_service import JMService
+from iam57_onanibot.services.jm_service import JMService
 
 jm_cmd = on_command("jm")
 jm_service = JMService()
 
 
 @jm_cmd.handle()
-async def _(bot: Bot,
-            jm_id: Annotated[Message, CommandArg()],
-            event: GroupMessageEvent):
+async def _(
+    bot: Bot, jm_id: Annotated[Message, CommandArg()], event: GroupMessageEvent
+):
     jm_id = jm_id.extract_plain_text()
     if not jm_id.isdigit():
         await jm_cmd.finish("参数错误，请输入JM后的纯数字ID!")
@@ -37,7 +37,7 @@ async def _(bot: Bot,
             "upload_group_file",
             group_id=event.group_id,
             file=comic_file_path,
-            name=f"{comic.id}.pdf"
+            name=f"{comic.id}.pdf",
         )
-    except AdapterException as e:
+    except AdapterException:
         await jm_cmd.finish("发送时出现错误!")
