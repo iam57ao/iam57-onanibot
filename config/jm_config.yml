@@ -1,0 +1,24 @@
+client:
+  domain:
+    - www.cdnblackmyth.xyz
+    - jmcomic-zzz.org
+    - 18comic.vip
+    - jmcomic-zzz.one
+    - 18comic-mygo.org
+    - 18comic-MHWs.CC
+    - 18comic.org
+    - 18comic-mygo.vip
+  postman:
+    meta_data:
+      proxies: system
+dir_rule:
+  base_dir: /app/data/comics
+  rule: Bd_Atitle_Pindex
+download:
+  cache: true
+  image:
+    decode: true
+    suffix: .jpg
+  threading:
+    batch_count: 45
+version: '2.0'
