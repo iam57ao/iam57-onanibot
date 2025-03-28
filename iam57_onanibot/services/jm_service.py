@@ -1,8 +1,10 @@
 from pathlib import Path
+import tempfile
 
 from jmcomic import JmAlbumDetail, JmOption
 from nonebot import get_plugin_config, logger
 from PIL import Image
+from PyPDF2 import PdfMerger
 import yaml
 
 from iam57_onanibot.configs.jm_config import JMConfig
@@ -33,9 +35,7 @@ class JMService(metaclass=JMServiceMeta):
         comic_file_path = self.jm_comic_path / f"{comic.title}.pdf"
         if not Path.exists(comic_file_path):
             self.jm_option.download_album(comic.album_id)
-            self.all_to_pdf(
-                self.jm_comic_path / comic.title, self.jm_comic_path, comic.title
-            )
+            self.all_to_pdf(self.jm_comic_path / comic.title, comic_file_path)
         return str(comic_file_path)
 
     def __set_comic_dir(self):
@@ -56,56 +56,74 @@ class JMService(metaclass=JMServiceMeta):
         self.jm_comic_path = jm_comic_path
 
     @staticmethod
-    def all_to_pdf(input_dir: str, output_dir: str, output_filename: str):
+    def all_to_pdf(input_dir: str, output_pdf_path: str, batch_size=50):
         """
-        扫描 input_dir 下的子文件夹，收集所有 .jpg 图片并合并导出为 PDF。
+        将文件夹中的图片转换为PDF，采用分段处理避免内存溢出
 
-        :param input_dir:       存放图片的文件夹路径
-        :param output_dir:      PDF 输出目录
-        :param output_filename: PDF 文件名（可不带 .pdf 后缀）
+        Args:
+            input_dir (str): 输入文件夹路径
+            output_pdf_path (str): 输出PDF文件路径
+            batch_size (int): 每批处理的图片数量
         """
-        input_path = Path(input_dir)
-        output_path = Path(output_dir)
-        sub_dirs = []
-        for entry in input_path.iterdir():
-            if entry.is_dir():
-                try:
-                    sub_dirs.append(int(entry.name))
-                except ValueError:
-                    logger.warning(f"子目录名非数字：{entry.name}，已跳过。")
-        sub_dirs.sort()
-        images = []
-        for subdir in sub_dirs:
-            subdir_path = input_path / str(subdir)
-            if not subdir_path.is_dir():
-                logger.warning(f"目录不存在或不是文件夹：{subdir_path}，已跳过。")
-                continue
-            for sub_entry in subdir_path.iterdir():
-                if sub_entry.is_dir():
-                    logger.warning(
-                        f"在目录 {subdir_path} 下发现了意外的子目录: {sub_entry.name}"
-                    )
-                elif sub_entry.is_file() and sub_entry.suffix.lower() == ".jpg":
-                    images.append(sub_entry)
-        if not images:
-            logger.error(f"未在目录 {input_path} 下找到任何 .jpg 图片，无法生成 PDF。")
-            return
-        main_image_path = images[0]
-        main_image = Image.open(main_image_path)
-        if main_image.mode != "RGB":
-            main_image = main_image.convert("RGB")
-        extra_images = []
-        for img_path in images[1:]:
-            img = Image.open(img_path)
-            if img.mode != "RGB":
-                img = img.convert("RGB")
-            extra_images.append(img)
-        pdf_file_path = output_path / output_filename
-        if pdf_file_path.suffix.lower() != ".pdf":
-            pdf_file_path = pdf_file_path.with_suffix(".pdf")
-        pdf_file_path.parent.mkdir(parents=True, exist_ok=True)
-        main_image.save(pdf_file_path, "PDF", save_all=True, append_images=extra_images)
-        logger.info(f"PDF 文件已生成：{pdf_file_path}")
-        main_image.close()
-        for img in extra_images:
-            img.close()
+        try:
+            logger.info(f"开始处理文件夹：{input_dir}")
+            images = []
+            input_path = Path(input_dir)
+            for entry in input_path.iterdir():  # 使用 iterdir() 替代 os.scandir()
+                if entry.is_file() and entry.suffix.lower() in {
+                    ".jpg",
+                    ".jpeg",
+                    ".png",
+                }:
+                    images.append(str(entry))
+            if not images:
+                logger.warning(f"在 {input_dir} 中没有找到图片")
+                return
+            images.sort()
+            total_images = len(images)
+            logger.info(f"找到 {total_images} 张图片")
+            with tempfile.TemporaryDirectory() as temp_dir:
+                batch_pdfs = []
+                for i in range(0, total_images, batch_size):
+                    batch_images = images[i : i + batch_size]
+                    batch_num = i // batch_size + 1
+                    total_batches = (total_images + batch_size - 1) // batch_size
+                    logger.info(f"处理第 {batch_num}/{total_batches} 批图片")
+                    try:
+                        first_image = Image.open(batch_images[0])
+                        if first_image.mode != "RGB":
+                            first_image = first_image.convert("RGB")
+                        remaining_images = []
+                        for img_path in batch_images[1:]:
+                            img = Image.open(img_path)
+                            if img.mode != "RGB":
+                                img = img.convert("RGB")
+                            remaining_images.append(img)
+                        temp_pdf = str(Path(temp_dir) / f"temp_batch_{batch_num}.pdf")
+                        first_image.save(
+                            temp_pdf,
+                            "PDF",
+                            save_all=True,
+                            append_images=remaining_images,
+                        )
+                        batch_pdfs.append(temp_pdf)
+                        first_image.close()
+                        for img in remaining_images:
+                            img.close()
+                        logger.info(f"第 {batch_num} 批图片处理完成")
+                    except Exception as e:
+                        logger.error(f"处理第 {batch_num} 批图片时出错: {e}")
+                        continue
+                if batch_pdfs:
+                    logger.info(f"开始合并 {len(batch_pdfs)} 个临时PDF...")
+                    merger = PdfMerger()
+                    for pdf in batch_pdfs:
+                        merger.append(pdf)
+                    merger.write(output_pdf_path)
+                    merger.close()
+                    logger.info(f"PDF合并完成：{output_pdf_path}")
+                else:
+                    logger.warning("没有成功生成任何PDF")
+        except Exception as e:
+            logger.error(f"转换PDF时出错: {e}")
+            raise

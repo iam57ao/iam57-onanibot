@@ -13,7 +13,7 @@ client:
       proxies: system
 dir_rule:
   base_dir: E:\Projects\Python\iam57-onanibot\data\comics
-  rule: Bd_Atitle_Pindex
+  rule: Bd_Ptitle
 download:
   cache: true
   image:
