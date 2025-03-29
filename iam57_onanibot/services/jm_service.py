@@ -32,9 +32,15 @@ class JMService(metaclass=JMServiceMeta):
     def get_comic_detail(self, jm_id: str) -> JmAlbumDetail:
         return self.jm_client.get_album_detail(jm_id)
 
+    def is_comic_exists(self, comic: JmAlbumDetail):
+        return Path.exists(self.jm_comic_path / f"{comic.title}.pdf")
+
+    def get_pdf_file_path(self, comic: JmAlbumDetail):
+        return self.jm_comic_path / f"{comic.title}.pdf"
+
     def download_comic_and_get_pdf_file_path(self, comic: JmAlbumDetail):
-        comic_file_path = self.jm_comic_path / f"{comic.title}.pdf"
-        if not Path.exists(comic_file_path):
+        comic_file_path = self.get_pdf_file_path(comic)
+        if not self.is_comic_exists(comic):
             self.jm_option.download_album(comic.album_id)
             self.all_to_pdf(self.jm_comic_path / comic.title, comic_file_path)
         return str(comic_file_path)

@@ -30,9 +30,12 @@ async def _(
             "1. ID有误，检查你的本子ID\n"
             "2. 该漫画只对登录用户可见"
         )
-    await jm_cmd.send(f"正在开始下载并转换为PDF:\n{comic.name}")
-    comic_file_path = jm_service.download_comic_and_get_pdf_file_path(comic)
+    comic_file_path = str(jm_service.get_pdf_file_path(comic))
+    if not jm_service.is_comic_exists(comic):
+        await jm_cmd.send(f"正在开始下载并转换为PDF:\n{comic.name}")
+        comic_file_path = jm_service.download_comic_and_get_pdf_file_path(comic)
     try:
+        await jm_cmd.send(f"正在发送:\n{comic.name}")
         await bot.call_api(
             "upload_group_file",
             group_id=event.group_id,
