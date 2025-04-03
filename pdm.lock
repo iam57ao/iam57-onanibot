@@ -390,7 +390,7 @@ files = [
 
 [[package]]
 name = "jmcomic"
-version = "2.5.32"
+version = "2.5.33"
 requires_python = ">=3.7"
 summary = "Python API For JMComic (禁漫天堂)"
 groups = ["default"]
@@ -402,8 +402,8 @@ dependencies = [
     "pycryptodome",
 ]
 files = [
-    {file = "jmcomic-2.5.32-py3-none-any.whl", hash = "sha256:98c7156ff584e6fe5892cc58420bf5a5cc16a28785285d094ba02f53273ad9bd"},
-    {file = "jmcomic-2.5.32.tar.gz", hash = "sha256:fb77281e25b733641a36c5906d660b4b824e19d3176fff5f47d35ca5dfd0ef22"},
+    {file = "jmcomic-2.5.33-py3-none-any.whl", hash = "sha256:fce91609aebab0fb55cdae219af36c8f7052a27fa2d0763fd61eaaf811cf0f8a"},
+    {file = "jmcomic-2.5.33.tar.gz", hash = "sha256:ebd3feb48c7b7fe13891f073ae5f6f76314f93b4db774a2ae613e6e7b64ad5c2"},
 ]
 
 [[package]]
