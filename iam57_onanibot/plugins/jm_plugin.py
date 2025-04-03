@@ -1,16 +1,23 @@
 from typing import Annotated
 
 from jmcomic import MissingAlbumPhotoException
-from nonebot import on_command
+from nonebot import get_plugin_config, on_command
 from nonebot.adapters import Message
 from nonebot.adapters.onebot.v11.bot import Bot
 from nonebot.adapters.onebot.v11.event import GroupMessageEvent
 from nonebot.exception import AdapterException
 from nonebot.params import CommandArg
 
+from iam57_onanibot.configs.jm_config import JMConfig
 from iam57_onanibot.services.jm_service import JMService
 
-jm_cmd = on_command("jm")
+
+async def is_jm_enable_group(event: GroupMessageEvent):
+    jm_config = get_plugin_config(JMConfig)
+    return str(event.group_id) in jm_config.jm_enable_groups
+
+
+jm_cmd = on_command("jm", rule=is_jm_enable_group)
 jm_service = JMService()
 
 
