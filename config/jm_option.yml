@@ -1,13 +1,4 @@
 client:
-  domain:
-  - www.cdnblackmyth.xyz
-  - jmcomic-zzz.org
-  - 18comic.vip
-  - jmcomic-zzz.one
-  - 18comic-mygo.org
-  - 18comic-MHWs.CC
-  - 18comic.org
-  - 18comic-mygo.vip
   postman:
     meta_data:
       proxies: system
